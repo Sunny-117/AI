@@ -171,3 +171,16 @@ async function executeWorkflow(nodeId) {​
 - 触发器机制
 - 知识库(RAG)
 
+## 字节coze的企业内部AI开发平台实现思路
+
+- LLM、扣子核心业务
+- 流程引擎编辑器,@xyflow/react
+- 工作流节点、节点抽象
+- 执行沙箱(Python)
+- 业务侧服务端
+
+1. 模型接入,Deepseek
+2. 模型配置,模型参数,复杂表单 react-hook-form
+3. 模型上下文维持,向量数据库(Postgresql)
+4. 工作流引擎编排,@xyflow/react
+5. 前端执行沙箱（JS低代码）、服务端执行沙箱
