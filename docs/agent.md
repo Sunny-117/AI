@@ -48,8 +48,9 @@ MCP
 
 ## Rule（约束）
 
-Not
 Where
 What
 How
 Should
+Not
+
