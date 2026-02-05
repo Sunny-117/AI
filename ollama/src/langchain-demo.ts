@@ -24,7 +24,7 @@ async function main() {
   const stream = await llm.stream([new HumanMessage('写一个 Python Hello World 示例')])
   process.stdout.write('回答: ')
   for await (const chunk of stream) {
-    process.stdout.write(chunk.content)
+    process.stdout.write(chunk.content as string)
   }
   console.log('\n')
 
