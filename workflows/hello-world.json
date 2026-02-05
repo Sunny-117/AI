@@ -41,7 +41,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { message: 'Hello, ' + $json.name + '!', name: $json.name, timestamp: $json.timestamp } }}"
+        "responseBody": "={{ JSON.stringify({ message: 'Hello, ' + $json.name + '!', name: $json.name, timestamp: $json.timestamp }) }}"
       },
       "id": "respond",
       "name": "返回响应",
