@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "instanceId": "api-proxy-workflow"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api/proxy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook 接收请求",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "proxy-webhook"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "method",
+              "value": "={{ $json.body.method || 'GET' }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.body.url }}"
+            },
+            {
+              "name": "headers",
+              "value": "={{ JSON.stringify($json.body.headers || {}) }}"
+            },
+            {
+              "name": "data",
+              "value": "={{ JSON.stringify($json.body.data || {}) }}"
+            }
+          ]
+        }
+      },
+      "id": "parse-request",
+      "name": "解析请求参数",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "={{ $json.method }}",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": "={{ Object.entries(JSON.parse($json.headers)).map(([k,v]) => ({name: k, value: v})) }}"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": "={{ Object.entries(JSON.parse($json.data)).map(([k,v]) => ({name: k, value: v})) }}"
+        },
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "proxy-request",
+      "name": "转发请求",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 统一响应格式\nconst response = {\n  success: true,\n  status: $item(0).json.statusCode || 200,\n  data: $item(0).json.data || $item(0).json,\n  timestamp: new Date().toISOString(),\n  proxyBy: 'n8n'\n};\n\nreturn { json: response };"
+      },
+      "id": "format-response",
+      "name": "格式化响应",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": "={{ $json.status || 200 }}"
+        }
+      },
+      "id": "respond",
+      "name": "返回响应",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "YOUR_NOTION_LOG_DB_ID"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "URL",
+              "stringValue": "={{ $json.data.url || 'N/A' }}"
+            },
+            {
+              "key": "Method",
+              "stringValue": "={{ $json.data.method || 'GET' }}"
+            },
+            {
+              "key": "Status",
+              "numberValue": "={{ $json.status }}"
+            },
+            {
+              "key": "Time",
+              "dateValue": "={{ $json.timestamp }}"
+            }
+          ]
+        }
+      },
+      "id": "log-request",
+      "name": "记录日志",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [850, 500]
+    }
+  ],
+  "connections": {
+    "Webhook 接收请求": {
+      "main": [
+        [
+          {
+            "node": "解析请求参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析请求参数": {
+      "main": [
+        [
+          {
+            "node": "转发请求",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "转发请求": {
+      "main": [
+        [
+          {
+            "node": "格式化响应",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "记录日志",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化响应": {
+      "main": [
+        [
+          {
+            "node": "返回响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

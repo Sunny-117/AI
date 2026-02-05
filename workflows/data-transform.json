@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "instanceId": "data-transform-workflow"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "transform",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook",
+      "name": "接收数据",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "transform-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 数据转换示例\nconst input = $input.all();\n\n// 示例1: 转换嵌套数组结构\nconst users = input[0].json.users || [];\n\nconst results = users.map(user => ({\n  id: user.id,\n  fullName: `${user.firstName} ${user.lastName}`,\n  email: user.email.toLowerCase(),\n  age: user.age || 0,\n  isAdult: (user.age || 0) >= 18,\n  status: user.active ? 'active' : 'inactive',\n  roles: (user.roles || []).join(', '),\n  createdAt: user.createdAt || new Date().toISOString()\n}));\n\n// 示例2: 添加统计信息\nconst stats = {\n  total: results.length,\n  adults: results.filter(r => r.isAdult).length,\n  active: results.filter(r => r.status === 'active').length\n};\n\nreturn {\n  json: {\n    users: results,\n    statistics: stats,\n    processedAt: new Date().toISOString()\n  }\n};"
+      },
+      "id": "transform-code",
+      "name": "数据转换",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "total_count",
+              "value": "={{ $json.statistics.total }}"
+            },
+            {
+              "name": "adult_count",
+              "value": "={{ $json.statistics.adults }}"
+            },
+            {
+              "name": "active_count",
+              "value": "={{ $json.statistics.active }}"
+            }
+          ]
+        }
+      },
+      "id": "add-summary",
+      "name": "添加摘要",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond",
+      "name": "返回结果",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "接收数据": {
+      "main": [
+        [
+          {
+            "node": "数据转换",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数据转换": {
+      "main": [
+        [
+          {
+            "node": "添加摘要",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "添加摘要": {
+      "main": [
+        [
+          {
+            "node": "返回结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

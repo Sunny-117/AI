@@ -1,0 +1,191 @@
+{
+  "meta": {
+    "instanceId": "example-workflow"
+  },
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook-trigger",
+      "name": "Webhook 触发器",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "trigger-id"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.example.com/data",
+        "options": {}
+      },
+      "id": "http-request",
+      "name": "HTTP 请求",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equals",
+              "value2": "success"
+            }
+          ]
+        }
+      },
+      "id": "if-condition",
+      "name": "条件判断",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "请求成功"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "set-data",
+      "name": "设置数据",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// JavaScript 代码节点\nconst input = $input.all();\nconst results = input.map(item => ({\n  json: {\n    processed: true,\n    data: item.json,\n    timestamp: new Date().toISOString()\n  }\n}));\nreturn results;"
+      },
+      "id": "code-node",
+      "name": "代码处理",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "item-result",
+              "name": "结果",
+              "value": "={{ $json }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "merge-node",
+      "name": "合并结果",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond-webhook",
+      "name": "返回响应",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook 触发器": {
+      "main": [
+        [
+          {
+            "node": "HTTP 请求",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP 请求": {
+      "main": [
+        [
+          {
+            "node": "条件判断",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "条件判断": {
+      "main": [
+        [
+          {
+            "node": "设置数据",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "代码处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "设置数据": {
+      "main": [
+        [
+          {
+            "node": "合并结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "代码处理": {
+      "main": [
+        [
+          {
+            "node": "合并结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并结果": {
+      "main": [
+        [
+          {
+            "node": "返回响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

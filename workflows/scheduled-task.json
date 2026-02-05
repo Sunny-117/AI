@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "instanceId": "scheduled-task-workflow"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "定时触发 (每30分钟)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/n8n-io/n8n/releases/latest",
+        "options": {}
+      },
+      "id": "get-latest-release",
+      "name": "获取最新版本",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "version",
+              "value": "={{ $json.tag_name }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.html_url }}"
+            },
+            {
+              "name": "published_at",
+              "value": "={{ $json.published_at }}"
+            },
+            {
+              "name": "check_time",
+              "value": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "format-data",
+      "name": "格式化数据",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 计算距离上次检查的时间差\nconst data = $input.first().json;\nconst published = new Date(data.published_at);\nconst now = new Date();\nconst diffDays = Math.floor((now - published) / (1000 * 60 * 60 * 24));\n\nreturn {\n  json: {\n    ...data,\n    days_since_release: diffDays,\n    is_recent: diffDays <= 7\n  }\n};"
+      },
+      "id": "calculate-days",
+      "name": "计算天数",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_recent }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-recent",
+      "name": "是否最近发布",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "channel": "n8n-updates",
+        "text": "🚀 新版本发布: {{ $json.name }}\n\n版本: {{ $json.version }}\n发布时间: {{ $json.days_since_release }} 天前\n\n查看详情: {{ $json.url }}"
+      },
+      "id": "send-notification",
+      "name": "发送通知",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1250, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-credential",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "YOUR_NOTION_DATABASE_ID"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Version",
+              "stringValue": "={{ $json.version }}"
+            },
+            {
+              "key": "Name",
+              "stringValue": "={{ $json.name }}"
+            },
+            {
+              "key": "Published",
+              "dateValue": "={{ $json.published_at }}"
+            }
+          ]
+        }
+      },
+      "id": "log-to-notion",
+      "name": "记录到Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [1250, 400]
+    }
+  ],
+  "connections": {
+    "定时触发 (每30分钟)": {
+      "main": [
+        [
+          {
+            "node": "获取最新版本",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取最新版本": {
+      "main": [
+        [
+          {
+            "node": "格式化数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化数据": {
+      "main": [
+        [
+          {
+            "node": "计算天数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "计算天数": {
+      "main": [
+        [
+          {
+            "node": "是否最近发布",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是否最近发布": {
+      "main": [
+        [
+          {
+            "node": "发送通知",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "记录到Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

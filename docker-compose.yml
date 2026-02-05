@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # 基础配置
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+
+      # 数据存储
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-true}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-password}
+
+      # 执行相关
+      - N8N_EXECUTIONS_TIMEOUT=${N8N_EXECUTIONS_TIMEOUT:-300}
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=${N8N_CONCURRENCY_PRODUCTION_LIMIT:-10}
+
+      # 时区设置
+      - TZ=Asia/Shanghai
+
+      # 工作流保存路径
+      - N8N_USER_FOLDER=/home/node/.n8n
+
+      # Webhook URL (生产环境需配置外网可访问的地址)
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678}
+
+      # 禁用遥测
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_DIAGNOSTICS_CONFIG_ENABLED=false
+
+    volumes:
+      # 持久化数据
+      - n8n_data:/home/node/.n8n
+
+      # 挂载工作流文件（可选，方便开发）
+      - ./workflows:/workflows
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 可选: PostgreSQL 数据库（生产环境推荐）
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: n8n-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_USER=n8n
+  #     - POSTGRES_PASSWORD=n8n_password
+  #     - POSTGRES_DB=n8n
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U n8n"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # 可选: Redis 缓存（用于分布式执行）
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: n8n-redis
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+
+volumes:
+  n8n_data:
+    driver: local
+  # postgres_data:
+  #   driver: local
+  # redis_data:
+  #   driver: local
