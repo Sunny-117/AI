@@ -11,19 +11,35 @@ importers:
       ollama:
         specifier: ^0.6.3
         version: 0.6.3
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.0
+        version: 25.2.0
 
 packages:
 
+  '@types/node@25.2.0':
+    resolution: {integrity: sha512-DZ8VwRFUNzuqJ5khrvwMXHmvPe+zGayJhr2CDNiKB1WBE1ST8Djl00D0IC4vvNmHMdj6DlbYRIaFE7WHjlDl5w==}
+
   ollama@0.6.3:
     resolution: {integrity: sha512-KEWEhIqE5wtfzEIZbDCLH51VFZ6Z3ZSa6sIOg/E/tBV8S51flyqBOXi+bRxlOYKDf8i327zG9eSTb8IJxvm3Zg==}
+
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
   whatwg-fetch@3.6.20:
     resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
 
 snapshots:
 
+  '@types/node@25.2.0':
+    dependencies:
+      undici-types: 7.16.0
+
   ollama@0.6.3:
     dependencies:
       whatwg-fetch: 3.6.20
+
+  undici-types@7.16.0: {}
 
   whatwg-fetch@3.6.20: {}

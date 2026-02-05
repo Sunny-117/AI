@@ -12,5 +12,8 @@
   "packageManager": "pnpm@10.9.0",
   "dependencies": {
     "ollama": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0"
   }
 }
