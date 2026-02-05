@@ -4,13 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "esno --watch src/index.ts"
+    "dev": "esno --watch src/index.ts",
+    "demo": "esno src/langchain-demo.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.9.0",
   "dependencies": {
+    "@langchain/core": "^1.1.19",
+    "@langchain/ollama": "^1.2.2",
     "ollama": "^0.6.3"
   },
   "devDependencies": {
